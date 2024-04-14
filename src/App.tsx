@@ -14,7 +14,7 @@ function App() {
 
       <main>
         <QueryClientProvider client={queryClient}>
-          <HybridInput suggestions={['TAG1', 'TAG2', 'TAG3', 'TAG4']} />
+          <HybridInput />
         </QueryClientProvider>
       </main>
     </div>

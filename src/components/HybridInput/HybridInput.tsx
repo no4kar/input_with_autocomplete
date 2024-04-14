@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useQuery } from 'react-query';
 import { useTagStore } from '../../store/store';
 
@@ -10,60 +10,63 @@ function fetchData() {
 };
 
 type TyData = {
-  category: string,
-  id: string,
-  name: string,
-  value: number,
+  category: string;
+  id: string;
+  name: string;
+  value: number;
 }
 
-const HybridInput: React.FC<{ suggestions: string[] }> = ({
-  // suggestions
-}) => {
+const HybridInput = () => {
+  const [inputValue, setInputValue] = useState('');
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
   const {
     isLoading,
     isError,
-    data: suggestions,
-    error } = useQuery<TyData[]>({
-      queryKey: ['data'],
-      queryFn: fetchData,
-    });
-  const [inputValue, setInputValue] = useState('');
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+    data,
+    error,
+  } = useQuery<TyData[]>({
+    queryKey: ['data'],
+    queryFn: fetchData,
+  });
   const tags = useTagStore((state) => state.tags);
+  const suggestions = data?.slice(0, 30); // in array 2 same element namber 31 and 34
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value.trim();
-    setInputValue(inputValue);
+    const currentValue = e.target.value;
+    setInputValue(currentValue);
 
-    if (!inputValue) {
+    if (!currentValue.trim()) {
       setFilteredSuggestions([]);
       return;
     }
 
+
     if (suggestions) {
-      const filtered = suggestions.filter(suggestion =>
-        suggestion.name.toLowerCase().includes(inputValue.toLowerCase())
+      const filtered = suggestions.filter(
+        suggestion => suggestion.name.toLowerCase().includes(currentValue.toLowerCase())
       );
 
       setFilteredSuggestions(filtered.map(suggestion => suggestion.name));
     }
-
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
     useTagStore.getState().addTag(suggestion);
     setFilteredSuggestions([]);
     setInputValue('');
+    inputRef.current?.focus();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-
     switch (e.key) {
       case 'Enter':
-        useTagStore.getState().addTag(inputValue);
-        setInputValue('');
-        setFilteredSuggestions([]);
-
+        const currentValue = inputValue.trim();
+        if (currentValue) {
+          useTagStore.getState().addTag(currentValue);
+          setInputValue('');
+          setFilteredSuggestions([]);
+        }
         break;
 
       case 'Backspace':
@@ -71,7 +74,6 @@ const HybridInput: React.FC<{ suggestions: string[] }> = ({
           // Delete last tag
           useTagStore.getState().setTags(tags.slice(0, -1));
         }
-
         break;
 
       default:
@@ -99,15 +101,19 @@ const HybridInput: React.FC<{ suggestions: string[] }> = ({
     <div>
       <div className='tags__list'>
         {tags.map((tag, i) => (
-          <div key={`${tag}-${i}`} className='tags'>
+          <div key={i} className='tags'>
             <div className="tag" onClick={() => handleTagClick(i)}>
               {tag}
             </div>
-            <button className="delete" onClick={() => handleDeleteTag(i)}>×</button>
+
+            {/^[/*\-+=!@#$%^&*()]{1}$/.test(tag) === false && (
+              <button className="delete" onClick={() => handleDeleteTag(i)}>×</button>
+            )}
           </div>
         ))}
 
         <input
+          ref={inputRef}
           type="text"
           value={inputValue}
           onChange={handleChange}
@@ -116,17 +122,18 @@ const HybridInput: React.FC<{ suggestions: string[] }> = ({
         />
       </div>
 
-
       {!!filteredSuggestions.length && (
         <div className='suggestions__list'>
-          {suggestions?.map((suggestion) => (
-            <button
-              key={suggestion.id}
-              onClick={() => handleSelectSuggestion(suggestion.name)}
-            >
-              {suggestion.name}
-            </button>
-          ))}
+          {filteredSuggestions && (
+            filteredSuggestions.map((item) => (
+              <button
+                key={item}
+                onClick={() => handleSelectSuggestion(item)}
+              >
+                {item}
+              </button>
+            ))
+          )}
         </div>
       )}
     </div>
