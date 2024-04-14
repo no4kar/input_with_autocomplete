@@ -1,24 +1,22 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import HybridInput from './components/HybridInput/HybridInput';
+import { QueryClient, QueryClientProvider } from 'react-query';
+
+const queryClient = new QueryClient();
 
 function App() {
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
       </header>
+
+      <main>
+        <QueryClientProvider client={queryClient}>
+          <HybridInput suggestions={['TAG1', 'TAG2', 'TAG3', 'TAG4']} />
+        </QueryClientProvider>
+      </main>
     </div>
   );
 }
