@@ -1,4 +1,3 @@
-// store.ts
 import create, { State } from 'zustand';
 
 type TagState = {

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useQuery } from 'react-query';
-import { useTagStore } from '../../store/store';
+import { useTagStore } from '../../store/tag.store';
 
 import './HybridInput.css';
 
@@ -23,14 +23,16 @@ const HybridInput = () => {
   const {
     isLoading,
     isError,
-    data,
+    data = [],
     error,
-  } = useQuery<TyData[]>({
+  } = useQuery<TyData[], Error>({
     queryKey: ['data'],
     queryFn: fetchData,
+    initialData: [],
   });
+
   const tags = useTagStore((state) => state.tags);
-  const suggestions = data?.slice(0, 30); // in array 2 same elements (number 31 and 34)
+  const suggestions = data.slice(0, 30); // in array 2 same elements (number 31 and 34)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const currentValue = e.target.value;
@@ -41,14 +43,11 @@ const HybridInput = () => {
       return;
     }
 
+    const filtered = suggestions.filter(
+      suggestion => suggestion.name.toLowerCase().includes(currentValue.toLowerCase())
+    );
 
-    if (suggestions) {
-      const filtered = suggestions.filter(
-        suggestion => suggestion.name.toLowerCase().includes(currentValue.toLowerCase())
-      );
-
-      setFilteredSuggestions(filtered.map(suggestion => suggestion.name));
-    }
+    setFilteredSuggestions(filtered.map(suggestion => suggestion.name));
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
@@ -95,7 +94,7 @@ const HybridInput = () => {
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error: {(error as Error).message}</div>;
+  if (isError) return <div>Error: {error.message}</div>;
 
   return (
     <div>
@@ -115,6 +114,7 @@ const HybridInput = () => {
         <input
           ref={inputRef}
           type="text"
+          className="HybridInput__input"
           value={inputValue}
           onChange={handleChange}
           onKeyDown={handleKeyPress}
@@ -124,16 +124,14 @@ const HybridInput = () => {
 
       {!!filteredSuggestions.length && (
         <div className='suggestions__list'>
-          {filteredSuggestions && (
-            filteredSuggestions.map((item) => (
-              <button
-                key={item}
-                onClick={() => handleSelectSuggestion(item)}
-              >
-                {item}
-              </button>
-            ))
-          )}
+          {filteredSuggestions.map((item) => (
+            <button
+              key={item}
+              onClick={() => handleSelectSuggestion(item)}
+            >
+              {item}
+            </button>
+          ))}
         </div>
       )}
     </div>
